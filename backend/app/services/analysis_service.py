@@ -29,6 +29,15 @@ class AnalysisService:
             "emotion": emotion_res
         }
 
+    async def analyze_image(self, ocr_text: str, visual_emotion: Any) -> Dict[str, Any]:
+        # 1. Analyze the OCR text (Sentinent/Emotion)
+        text_analysis = await self.analyze_text(ocr_text) if ocr_text.strip() else {"sentiment": {}, "emotion": {}}
+        
+        return {
+            "text_analysis": text_analysis,
+            "visual_emotion": visual_emotion
+        }
+
     async def save_analysis(self, result_data: Dict[str, Any]) -> Any:
         db = get_database()
         result = await db.analyses.insert_one(result_data)
