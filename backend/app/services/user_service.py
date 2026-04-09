@@ -1,7 +1,12 @@
-from typing import Optional
+from bson import ObjectId
 from ..db.mongodb import get_database
 from ..models.user import UserInDB, UserCreate
 from ..core.security import get_password_hash
+
+async def get_user_by_id(user_id: str):
+    db = get_database()
+    user_data = await db.users.find_one({"_id": ObjectId(user_id)})
+    return user_data
 
 async def get_user_by_email(email: str):
     db = get_database()
