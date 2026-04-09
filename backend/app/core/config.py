@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     
     # Hugging Face
     HF_API_TOKEN: str = os.getenv("HF_API_TOKEN", "")
+    MODEL_SENTIMENT: str = "cardiffnlp/twitter-roberta-base-sentiment-latest"
+    MODEL_EMOTION: str = "bhadresh-savani/bert-base-uncased-emotion"
+    MODEL_OCR_HANDWRITTEN: str = "microsoft/trocr-base-handwritten"
+    MODEL_VISUAL_EMOTION: str = "dima806/facial_emotions_image_detection"
+    MODEL_CHAT: str = "HuggingFaceH4/zephyr-7b-beta"
     
     class Config:
         case_sensitive = True
