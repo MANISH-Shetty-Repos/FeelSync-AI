@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict, Any
 from bson import ObjectId
-from ..database import get_database
+from ..db.mongodb import get_database
 from ..models.analysis import AnalysisResult
 
 class HistoryService:
