@@ -6,7 +6,8 @@ from ....services.analysis_service import analysis_service
 from ....services.text_service import text_service
 from ....services.image_service import image_service
 from ....services.media_service import media_service
-from ..deps import get_current_user
+from ....services.history_service import history_service
+from ...deps import get_current_user
 from ....models.user import UserOut
 
 router = APIRouter()

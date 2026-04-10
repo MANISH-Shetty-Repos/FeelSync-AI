@@ -16,3 +16,4 @@ opencv-python-headless==4.9.0.80
 moviepy==1.0.3
 pydub==0.25.1
 reportlab==4.0.9
+numpy<2.0.0
