@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     MODEL_EMOTION: str = "bhadresh-savani/bert-base-uncased-emotion"
     MODEL_OCR_HANDWRITTEN: str = "microsoft/trocr-base-handwritten"
     MODEL_VISUAL_EMOTION: str = "dima806/facial_emotions_image_detection"
+    MODEL_AUDIO: str = "openai/whisper-large-v3"
     MODEL_CHAT: str = "HuggingFaceH4/zephyr-7b-beta"
     
     class Config:
