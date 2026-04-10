@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Any
 from ....services.chat_service import chat_service
-from ..deps import get_current_user
+from ...deps import get_current_user
 from ....models.user import UserOut
 
 router = APIRouter()

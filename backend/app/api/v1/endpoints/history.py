@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
-from typing import Any, List, Optional
+from typing import List, Any, Optional
 from ....services.history_service import history_service
 from ....services.report_service import report_service
-from ..deps import get_current_user
+from ...deps import get_current_user
 from ....models.user import UserOut
 from fastapi.responses import StreamingResponse
 from datetime import datetime

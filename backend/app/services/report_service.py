@@ -1,13 +1,14 @@
 import io
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Optional, Dict, Any
+from bson import ObjectId
+from ..db.mongodb import get_database
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from .history_service import history_service
-from ..database import get_database
 
 class ReportService:
     async def generate_pdf_report(
