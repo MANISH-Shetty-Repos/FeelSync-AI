@@ -38,6 +38,19 @@ class AnalysisService:
             "visual_emotion": visual_emotion
         }
 
+    async def analyze_audio(self, transcription: str) -> Dict[str, Any]:
+        # Reuse text analysis logic for the transcription
+        return await self.analyze_text(transcription)
+
+    async def analyze_video(self, transcription: str, visual_emotions: List[Any]) -> Dict[str, Any]:
+        # 1. Analyze transcribed speech
+        speech_analysis = await self.analyze_text(transcription) if transcription.strip() else {}
+        
+        return {
+            "speech_analysis": speech_analysis,
+            "visual_timeline": visual_emotions
+        }
+
     async def save_analysis(self, result_data: Dict[str, Any]) -> Any:
         db = get_database()
         result = await db.analyses.insert_one(result_data)
