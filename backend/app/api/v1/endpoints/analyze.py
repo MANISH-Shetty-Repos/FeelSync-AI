@@ -1,9 +1,11 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from typing import Any, List
 from ....models.analysis import AnalysisResult, TextAnalysisRequest
 from ....services.analysis_service import analysis_service
 from ....services.text_service import text_service
 from ....services.image_service import image_service
+from ....services.media_service import media_service
 from ..deps import get_current_user
 from ....models.user import UserOut
 
@@ -113,3 +115,100 @@ async def analyze_image_input(
     # 6. Save to MongoDB
     saved_result = await analysis_service.save_analysis(result_to_save)
     return saved_result
+
+@router.post("/audio", response_model=AnalysisResult)
+async def analyze_audio_input(
+    file: UploadFile = File(...),
+    current_user: UserOut = Depends(get_current_user)
+) -> Any:
+    # 1. Save temp file for processing
+    temp_path = await media_service.save_temp_file(file)
+    
+    try:
+        # 2. Transcribe
+        transcription_res = await media_service.transcribe_audio(temp_path)
+        text = transcription_res.get("text", "")
+        
+        if not text:
+            raise HTTPException(status_code=400, detail="Could not transcribe audio")
+        
+        # 3. Analyze text
+        analysis_data = await analysis_service.analyze_audio(text)
+        
+        # 4. Generate suggestions
+        suggestions = analysis_service.generate_suggestions(
+            analysis_data.get("sentiment", []),
+            analysis_data.get("emotion", [])
+        )
+        
+        # 5. Prepare results
+        result_to_save = {
+            "user_id": str(current_user["_id"]),
+            "input_type": "audio",
+            "content": text,
+            "sentiment": analysis_data.get("sentiment", {}),
+            "emotion": analysis_data.get("emotion", {}),
+            "suggestions": suggestions
+        }
+        
+        # 6. Save
+        return await analysis_service.save_analysis(result_to_save)
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+@router.post("/video", response_model=AnalysisResult)
+async def analyze_video_input(
+    file: UploadFile = File(...),
+    current_user: UserOut = Depends(get_current_user)
+) -> Any:
+    # 1. Save temp file
+    temp_path = await media_service.save_temp_file(file)
+    audio_path = None
+    
+    try:
+        # 2. Extract Audio & Transcribe
+        audio_path = await media_service.extract_audio_from_video(temp_path)
+        transcription = ""
+        if audio_path:
+            trans_res = await media_service.transcribe_audio(audio_path)
+            transcription = trans_res.get("text", "")
+        
+        # 3. Extract Frames & Visual Emotion
+        frames = await media_service.extract_frames(temp_path)
+        visual_emotions = []
+        for frame_bytes in frames:
+            # Create a mock upload file form bytes for the logic
+            # Actually we can just query the model with bytes directly
+            from ....services.ai_service import ai_service
+            from ....core.config import settings
+            v_emot = await ai_service.query_hf_model(settings.MODEL_VISUAL_EMOTION, {"inputs": frame_bytes})
+            visual_emotions.append(v_emot)
+        
+        # 4. Multimodal Coordination
+        analysis_data = await analysis_service.analyze_video(transcription, visual_emotions)
+        
+        # 5. Suggestions
+        suggestions = analysis_service.generate_suggestions(
+            analysis_data["speech_analysis"].get("sentiment", []),
+            analysis_data["speech_analysis"].get("emotion", [])
+        )
+        
+        # 6. Save
+        result_to_save = {
+            "user_id": str(current_user["_id"]),
+            "input_type": "video",
+            "content": transcription or "Visual video analysis",
+            "sentiment": analysis_data["speech_analysis"].get("sentiment", {}),
+            "emotion": {
+                "speech_emotion": analysis_data["speech_analysis"].get("emotion", {}),
+                "visual_timeline": visual_emotions
+            },
+            "suggestions": suggestions
+        }
+        
+        return await analysis_service.save_analysis(result_to_save)
+        
+    finally:
+        if os.path.exists(temp_path): os.remove(temp_path)
+        if audio_path and os.path.exists(audio_path): os.remove(audio_path)
