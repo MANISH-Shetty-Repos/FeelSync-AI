@@ -1,22 +1,29 @@
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+from pydantic import BaseModel, EmailStr, Field, GetCoreSchemaHandler, GetJsonSchemaHandler
+from typing import Optional, List, Any
 from datetime import datetime
 from bson import ObjectId
 
+from pydantic_core import CoreSchema, core_schema
+from pydantic.json_schema import JsonSchemaValue
+
 class PyObjectId(ObjectId):
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.json_or_python_schema(
+            json_schema=core_schema.str_schema(),
+            python_schema=core_schema.is_instance_schema(ObjectId),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                lambda x: str(x)
+            ),
+        )
 
     @classmethod
-    def validate(cls, v):
-        if not ObjectId.is_valid(v):
-            raise ValueError("Invalid objectid")
-        return ObjectId(v)
-
-    @classmethod
-    def __get_pydantic_json_schema__(cls, field_schema):
-        field_schema.update(type="string")
+    def __get_pydantic_json_schema__(
+        cls, _core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        return handler(_core_schema)
 
 class UserBase(BaseModel):
     username: str
