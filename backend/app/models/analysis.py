@@ -9,8 +9,8 @@ class AnalysisResult(BaseModel):
     user_id: str
     input_type: str  # text, image, audio, video
     content: str  # The extracted text or description
-    sentiment: Dict[str, Any]
-    emotion: Dict[str, Any]
+    sentiment: Any
+    emotion: Any
     suggestions: List[str] = []
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
