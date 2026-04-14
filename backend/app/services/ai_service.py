@@ -4,21 +4,26 @@ from ..core.config import settings
 
 class AIService:
     def __init__(self):
-        self.api_url = "https://api-inference.huggingface.co/models/"
+        self.api_url = "https://router.huggingface.co/hf-inference/models/"
         self.headers = {"Authorization": f"Bearer {settings.HF_API_TOKEN}"}
 
-    async def query_hf_model(self, model_id: str, payload: Dict[str, Any]) -> Any:
+    async def query_hf_model(self, model_id: str, payload: Union[Dict[str, Any], bytes]) -> Any:
         # Check if token is present
         if not settings.HF_API_TOKEN:
             return {"error": "Hugging Face API Token not configured in .env"}
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                f"{self.api_url}{model_id}",
-                headers=self.headers,
-                json=payload,
-                timeout=30.0
-            )
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            kwargs = {
+                "url": f"{self.api_url}{model_id}",
+                "headers": self.headers
+            }
+            
+            if isinstance(payload, bytes):
+                kwargs["content"] = payload
+            else:
+                kwargs["json"] = payload
+
+            response = await client.post(**kwargs)
             
             # If model is loading, wait and retry? Or just return status
             if response.status_code == 503:
