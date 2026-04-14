@@ -37,7 +37,7 @@ class ImageService:
         # Base64 or binary depending on model; most HF models take binary
         result = await ai_service.query_hf_model(
             settings.MODEL_VISUAL_EMOTION,
-            {"inputs": image_data}
+            image_data
         )
         return result
 
