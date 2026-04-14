@@ -5,7 +5,20 @@ from ..core.security import get_password_hash
 
 async def get_user_by_id(user_id: str):
     db = get_database()
-    user_data = await db.users.find_one({"_id": ObjectId(user_id)})
+    if db is None:
+        return None
+    
+    # Try searching with ObjectId first (Native MongoDB)
+    try:
+        obj_id = ObjectId(user_id)
+        user_data = await db.users.find_one({"_id": obj_id})
+        if user_data:
+            return user_data
+    except Exception:
+        pass
+    
+    # Fallback: Search with string ID (For users saved as strings during transition)
+    user_data = await db.users.find_one({"_id": user_id})
     return user_data
 
 async def get_user_by_email(email: str):
