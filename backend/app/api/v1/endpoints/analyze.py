@@ -23,6 +23,10 @@ async def analyze_text_input(
     # 1. Perform AI analysis
     analysis_data = await analysis_service.analyze_text(request.text)
     
+    # Check for AI errors
+    if isinstance(analysis_data.get("sentiment"), dict) and "error" in analysis_data["sentiment"]:
+        raise HTTPException(status_code=503, detail=analysis_data["sentiment"]["error"])
+
     # 2. Generate suggestions
     suggestions = analysis_service.generate_suggestions(
         analysis_data["sentiment"], 
@@ -60,6 +64,10 @@ async def analyze_file_input(
     # 2. Perform AI analysis
     analysis_data = await analysis_service.analyze_text(text)
     
+    # Check for AI errors
+    if isinstance(analysis_data.get("sentiment"), dict) and "error" in analysis_data["sentiment"]:
+        raise HTTPException(status_code=503, detail=analysis_data["sentiment"]["error"])
+
     # 3. Generate suggestions
     suggestions = analysis_service.generate_suggestions(
         analysis_data["sentiment"], 
@@ -128,14 +136,22 @@ async def analyze_audio_input(
     try:
         # 2. Transcribe
         transcription_res = await media_service.transcribe_audio(temp_path)
+        
+        if isinstance(transcription_res, dict) and "error" in transcription_res:
+            raise HTTPException(status_code=503, detail=transcription_res["error"])
+            
         text = transcription_res.get("text", "")
         
         if not text:
-            raise HTTPException(status_code=400, detail="Could not transcribe audio")
+            raise HTTPException(status_code=400, detail="Could not transcribe audio: No speech detected")
         
         # 3. Analyze text
         analysis_data = await analysis_service.analyze_audio(text)
         
+        # Check for AI errors
+        if isinstance(analysis_data, dict) and "error" in analysis_data:
+            raise HTTPException(status_code=503, detail=analysis_data["error"])
+
         # 4. Generate suggestions
         suggestions = analysis_service.generate_suggestions(
             analysis_data.get("sentiment", []),
@@ -183,7 +199,7 @@ async def analyze_video_input(
             # Actually we can just query the model with bytes directly
             from ....services.ai_service import ai_service
             from ....core.config import settings
-            v_emot = await ai_service.query_hf_model(settings.MODEL_VISUAL_EMOTION, {"inputs": frame_bytes})
+            v_emot = await ai_service.query_hf_model(settings.MODEL_VISUAL_EMOTION, frame_bytes)
             visual_emotions.append(v_emot)
         
         # 4. Multimodal Coordination
